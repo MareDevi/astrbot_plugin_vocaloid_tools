@@ -13,7 +13,7 @@ from .src import CacheManager, RankAPIClient, MessageBuilder, SchedulerTask
     "vocaloid_tools",
     "MareDevi",
     "Vocaloid 工具插件，提供 Vocaloid 周刊排行榜查询功能",
-    "1.0.0",
+    "1.0.1",
     "https://github.com/MareDevi/astrbot_plugin_vocaloid_tools"
 )
 class VocaloidRankPlugin(Star):

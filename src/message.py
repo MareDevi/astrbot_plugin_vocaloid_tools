@@ -6,8 +6,8 @@ from typing import List
 
 import astrbot.api.message_components as Comp
 from astrbot.api.event import AstrMessageEvent
+from astrbot.api import logger
 
-from .constants import FORWARD_SUPPORTED_PLATFORMS
 from .types import VideoItem
 from .cache import CacheManager
 
@@ -66,10 +66,16 @@ class MessageBuilder:
     async def build_forward_nodes(self, videos: List[VideoItem], bot_id: str, bot_name: str, rank_name: str) -> List:
         """构建合并转发消息节点列表（异步）"""
         nodes = []
+        
+        # 将 bot_id 转换为整数（QQ号需要是整数类型）
+        try:
+            uin = int(bot_id)
+        except (ValueError, TypeError):
+            uin = 10000  # 默认值
 
         # 添加榜单标题节点
         header_node = Comp.Node(
-            uin=bot_id,
+            uin=uin,
             name=bot_name,
             content=[Comp.Plain(f"📋 Vocaloid 周刊 - {rank_name}\n\n以下是本期 Top 10：")]
         )
@@ -79,7 +85,7 @@ class MessageBuilder:
         for idx, video in enumerate(videos[:10], start=1):
             content = await self.build_video_content(video, idx)
             node = Comp.Node(
-                uin=bot_id,
+                uin=uin,
                 name=bot_name,
                 content=content
             )
@@ -91,14 +97,26 @@ class MessageBuilder:
     def is_forward_supported(event: AstrMessageEvent) -> bool:
         """检查当前平台是否支持合并转发消息"""
         try:
-            platform_type = event.get_platform_adapter_type()
-            return platform_type in FORWARD_SUPPORTED_PLATFORMS
-        except Exception:
+            # 从 unified_msg_origin 解析平台名
+            # 格式: platform_name:message_type:session_id
+            umo = event.unified_msg_origin
+            if umo:
+                platform_name = umo.split(":")[0].lower()
+                # aiocqhttp 是 OneBot v11 的平台标识
+                is_supported = platform_name in ("aiocqhttp", "onebot", "cqhttp")
+                logger.debug(f"平台名称: {platform_name}, 支持合并转发: {is_supported}")
+                return is_supported
+            return False
+        except Exception as e:
+            logger.warning(f"获取平台类型失败: {e}")
             return False
 
     async def send_rank_result(self, event: AstrMessageEvent, videos: List[VideoItem], rank_name: str):
         """发送榜单结果，根据平台选择合并转发或多条消息"""
-        if self.is_forward_supported(event):
+        use_forward = self.is_forward_supported(event)
+        logger.info(f"发送榜单: {rank_name}, 使用合并转发: {use_forward}")
+        
+        if use_forward:
             # 支持合并转发的平台，使用 Node
             bot_id = event.message_obj.self_id
             bot_name = "Vocaloid 周刊"

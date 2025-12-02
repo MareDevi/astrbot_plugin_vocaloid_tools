@@ -1,6 +1,6 @@
 name: astrbot_plugin_vocaloid_tools # 插件唯一识别名
 display_name: Vocaloid 周刊排行榜 # 用于展示的名字
 desc: 查询 Vocaloid 周刊排行榜，支持主榜、副榜、PickUp 榜，数据来源于 EVocalRank。
-version: v1.0.0 # 插件版本号
+version: v1.0.1 # 插件版本号
 author: MareDevi # 作者
 repo: https://github.com/MareDevi/astrbot_plugin_vocaloid_tools # 插件的仓库地址
