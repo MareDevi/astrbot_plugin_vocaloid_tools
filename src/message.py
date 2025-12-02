@@ -97,19 +97,12 @@ class MessageBuilder:
     def is_forward_supported(event: AstrMessageEvent) -> bool:
         """检查当前平台是否支持合并转发消息"""
         try:
-            # 从 unified_msg_origin 解析平台名
-            # 格式: platform_name:message_type:session_id
-            umo = event.unified_msg_origin
-            logger.info(f"unified_msg_origin: {umo}")
-            
-            if umo:
-                platform_name = umo.split(":")[0]
-                # 支持的平台名称（不区分大小写匹配）
-                supported_platforms = ("aiocqhttp", "onebot", "cqhttp", "nakuru")
-                is_supported = platform_name.lower() in supported_platforms
-                logger.info(f"平台名称: {platform_name}, 支持合并转发: {is_supported}")
-                return is_supported
-            return False
+            # 使用 AstrBot 提供的 API 获取平台名称
+            platform_name = event.get_platform_name()
+            # aiocqhttp 是 OneBot v11 的平台标识，支持合并转发
+            is_supported = platform_name == "aiocqhttp"
+            logger.info(f"平台名称: {platform_name}, 支持合并转发: {is_supported}")
+            return is_supported
         except Exception as e:
             logger.warning(f"获取平台类型失败: {e}")
             return False
@@ -117,7 +110,7 @@ class MessageBuilder:
     async def send_rank_result(self, event: AstrMessageEvent, videos: List[VideoItem], rank_name: str):
         """发送榜单结果，根据平台选择合并转发或多条消息"""
         use_forward = self.is_forward_supported(event)
-        logger.info(f"发送榜单: {rank_name}, 使用合并转发: {use_forward}, bot_id: {event.message_obj.self_id}")
+        logger.info(f"发送榜单: {rank_name}, 使用合并转发: {use_forward}")
         
         if use_forward:
             # 支持合并转发的平台，使用 Node
