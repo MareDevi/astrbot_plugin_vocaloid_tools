@@ -5,6 +5,7 @@ import asyncio
 from typing import List
 
 import astrbot.api.message_components as Comp
+from astrbot.api.message_components import Nodes
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api import logger
 
@@ -113,11 +114,15 @@ class MessageBuilder:
         logger.info(f"发送榜单: {rank_name}, 使用合并转发: {use_forward}")
         
         if use_forward:
-            # 支持合并转发的平台，使用 Node
+            # 支持合并转发的平台，使用 Nodes 包装所有 Node
+            # 关键：必须使用 Nodes 包装多个 Node，否则每个 Node 会被单独发送
             bot_id = event.message_obj.self_id
             bot_name = "Vocaloid 周刊"
             nodes = await self.build_forward_nodes(videos, bot_id, bot_name, rank_name)
-            yield event.chain_result(nodes)
+            logger.info(f"构建了 {len(nodes)} 个转发节点，准备发送合并转发消息")
+            # 使用 Nodes 包装所有 Node，一次性发送合并转发
+            forward_nodes = Nodes(nodes)
+            yield event.chain_result([forward_nodes])
         else:
             # 不支持合并转发的平台，发送多条普通消息
             # 先发送标题
